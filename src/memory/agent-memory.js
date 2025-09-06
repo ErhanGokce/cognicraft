@@ -21,7 +21,7 @@ class AgentMemory {
           return;
         }
         
-        // Tabloları oluştur
+        // Create tables if they don't exist
         this.db.serialize(() => {
           this.db.run(`
             CREATE TABLE IF NOT EXISTS experiences (
@@ -66,14 +66,14 @@ class AgentMemory {
     });
   }
 
-  // Kısa süreli hafıza (RAM'de)
+  // Short term memory (in-memory)
   addToShortTerm(event) {
     this.shortTermMemory.push({
       ...event,
       timestamp: new Date().toISOString()
     });
     
-    // Hafıza limitini aş
+    //  Maintain size limit
     if (this.shortTermMemory.length > this.maxShortTermMemory) {
       this.shortTermMemory.shift();
     }
@@ -83,7 +83,7 @@ class AgentMemory {
     return this.shortTermMemory.slice(-count);
   }
 
-  // Uzun süreli hafıza (Database'de)
+  // Long term memory (database)
   async saveExperience(action, context, result, success) {
     return new Promise((resolve, reject) => {
       const stmt = this.db.prepare(`
@@ -150,7 +150,7 @@ class AgentMemory {
     });
   }
 
-  // Başarılı deneyimleri öğren
+  // Long term memory queries
   async getSuccessfulActions(actionType, limit = 10) {
     return new Promise((resolve, reject) => {
       this.db.all(`
@@ -166,7 +166,7 @@ class AgentMemory {
     });
   }
 
-  // Sosyal hafıza
+  // Social interactions
   async getRecentInteractions(otherAgent, limit = 5) {
     return new Promise((resolve, reject) => {
       this.db.all(`
@@ -182,7 +182,7 @@ class AgentMemory {
     });
   }
 
-  // Keşfedilen yerler
+  // Explored locations
   async getVisitedLocations(limit = 20) {
     return new Promise((resolve, reject) => {
       this.db.all(`
@@ -198,7 +198,7 @@ class AgentMemory {
     });
   }
 
-  // Hafızayı özetle
+  // Memory summary
   getMemorySummary() {
     return {
       shortTermEvents: this.shortTermMemory.length,
@@ -207,7 +207,7 @@ class AgentMemory {
     };
   }
 
-  // Database'i kapat
+  // Close database connection
   close() {
     if (this.db) {
       this.db.close((err) => {
