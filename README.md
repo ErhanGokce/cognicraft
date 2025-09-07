@@ -1,3 +1,9 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="#">
+  <img alt="Cognicraft - Autonomus AI Agents for Minecraft" src="https://github.com/ErhanGokce/cognicraft/blob/main/cognicraft-text-nobg.png?raw=true" width=400 />
+</picture>
+
+
 # Cognicraft
 
 **Autonomous, learning agents for Minecraft — open-source and developer-friendly.**
