@@ -63,7 +63,7 @@ npm -v
 
 ---
 
-### 2) Install Ollama (optional but recommended)
+### 2) Install Ollama
 
 Download and install Ollama for your OS from the official page (macOS / Windows / Linux installers + instructions). After install you'll run Ollama locally on `http://localhost:11434` by default → [Ollama](https://ollama.com/download)
 
