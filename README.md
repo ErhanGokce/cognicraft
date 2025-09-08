@@ -212,7 +212,7 @@ You should see console logs as agents spawn and start acting (e.g. "AI_Miner spa
 
 ## 📄 License & Contribution
 
-Cognicraft is open source under the MIT License. Contributions welcome: open issues for bugs, feature requests or offer PRs for new behaviors and improvements.
+Cognicraft is open source under the Apache 2.0 License. Contributions welcome: open issues for bugs, feature requests or offer PRs for new behaviors and improvements.
 
 ### Contributing
 1. Fork the repository
