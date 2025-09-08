@@ -109,7 +109,7 @@ You can either:
 ### 4) Clone / Prepare the Cognicraft Project
 
 ```bash
-git clone https://github.com/your-username/Cognicraft.git
+git clone https://github.com/ErhanGokce/Cognicraft.git
 cd Cognicraft
 ```
 
