@@ -145,7 +145,7 @@ MODEL=gemma3:1b
 - If you use a dedicated server: start the server (`java -jar server.jar`) and confirm it listens on port 25565.
 - If you use singleplayer → **Open to LAN** or `/publish` on port `25565`.
 
-#### 2. **(Optional) Start Ollama**
+#### 2. **Start Ollama**
 
 ```bash
 ollama serve
