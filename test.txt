@@ -1,0 +1,152 @@
+// --------------- AutoClicker (Shift toggle, hold-to-click ~16 CPS) ---------------
+// Yapıştırıp çalıştır: konsolda (DevTools) Enter'a bas.
+// Kapatmak / kaldırmak için: stopAutoclicker();
+
+(function(){
+  if (window.__simpleShiftAutoClickerInstalled) {
+    console.warn('AutoClicker zaten yüklü. stopAutoclicker() ile kaldırabilirsin.');
+    return;
+  }
+  window.__simpleShiftAutoClickerInstalled = true;
+
+  // --- AYARLAR ---
+  const CPS = 16; // hedef clicks per second
+  const intervalMs = Math.round(1000 / CPS); // ~62 ms for 16 CPS
+  const restrictToHost = location.host; // istersen burayı değiştir: örn "example.com"
+  // ----------------------------------------------------------------
+
+  let enabled = false;
+  let mouseDown = false;
+  let clickIntervalId = null;
+  let lastMouseX = 0;
+  let lastMouseY = 0;
+
+  // Basit durum göstergesi
+  const statusEl = document.createElement('div');
+  Object.assign(statusEl.style, {
+    position: 'fixed',
+    right: '12px',
+    bottom: '12px',
+    padding: '8px 10px',
+    background: 'rgba(0,0,0,0.65)',
+    color: 'white',
+    fontFamily: 'Arial, sans-serif',
+    fontSize: '13px',
+    borderRadius: '6px',
+    zIndex: 2147483647,
+    pointerEvents: 'none',
+    transition: 'opacity 0.12s',
+  });
+  statusEl.textContent = 'AutoClicker: OFF';
+  document.documentElement.appendChild(statusEl);
+
+  function updateStatus() {
+    statusEl.textContent = `AutoClicker: ${enabled ? 'ON' : 'OFF'}${mouseDown ? ' (mouse down)' : ''}`;
+    statusEl.style.opacity = enabled ? '1' : '0.55';
+  }
+
+  // Domain kontrolü (sadece o sitede çalışsın)
+  if (location.host !== restrictToHost) {
+    console.warn('AutoClicker: Bu kod şu an bulunduğun host için yapılandırıldı:', restrictToHost);
+    console.warn('Mevcut host:', location.host, '- çalıştırılmıyor.');
+    // Yine de yükleme yapmıyoruz.
+    document.documentElement.removeChild(statusEl);
+    window.__simpleShiftAutoClickerInstalled = false;
+    return;
+  }
+
+  // Fare koordinatlarını güncelle
+  function onMouseMove(e) {
+    lastMouseX = e.clientX;
+    lastMouseY = e.clientY;
+  }
+
+  // Mousedown/mouseup (sadece sol tuş)
+  function onMouseDown(e) {
+    if (e.button !== 0) return;
+    mouseDown = true;
+    if (enabled) startClicking();
+    updateStatus();
+  }
+  function onMouseUp(e) {
+    if (e.button !== 0) return;
+    mouseDown = false;
+    stopClicking();
+    updateStatus();
+  }
+
+  // Shift ile toggle (key repeat'i engelle)
+  function onKeyDown(e) {
+    if (e.key === 'Shift' && !e.repeat) {
+      enabled = !enabled;
+      if (!enabled) stopClicking();
+      else if (mouseDown) startClicking();
+      updateStatus();
+      // görsel kısa bir flash
+      statusEl.style.transform = 'scale(1.05)';
+      setTimeout(()=> statusEl.style.transform = '', 100);
+    }
+  }
+
+  // Tıklamayı başlat / durdur
+  function startClicking() {
+    if (clickIntervalId) return;
+    clickIntervalId = setInterval(()=> {
+      // element altında tıklama yap
+      const el = document.elementFromPoint(lastMouseX, lastMouseY);
+      if (!el) return;
+      // pointerdown, pointerup, click sırası
+      try {
+        const rect = el.getBoundingClientRect();
+        const clientX = Math.max(rect.left + 1, Math.min(lastMouseX, rect.right - 1));
+        const clientY = Math.max(rect.top + 1, Math.min(lastMouseY, rect.bottom - 1));
+        ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(type => {
+          const ev = new MouseEvent(type, {
+            bubbles: true,
+            cancelable: true,
+            view: window,
+            clientX,
+            clientY,
+            button: 0,
+          });
+          el.dispatchEvent(ev);
+        });
+      } catch (err) {
+        // sende hata olursa sessizce atla
+        // console.error('click error', err);
+      }
+    }, intervalMs);
+  }
+
+  function stopClicking() {
+    if (!clickIntervalId) return;
+    clearInterval(clickIntervalId);
+    clickIntervalId = null;
+  }
+
+  // Temizleme / kaldırma fonksiyonu
+  function stopAutoclicker() {
+    stopClicking();
+    window.removeEventListener('mousemove', onMouseMove, true);
+    window.removeEventListener('mousedown', onMouseDown, true);
+    window.removeEventListener('mouseup', onMouseUp, true);
+    window.removeEventListener('keydown', onKeyDown, true);
+    if (statusEl && statusEl.parentNode) statusEl.parentNode.removeChild(statusEl);
+    window.__simpleShiftAutoClickerInstalled = false;
+    // expose removal function only once
+    try { delete window.stopAutoclicker; } catch(e){}
+    console.log('AutoClicker kaldırıldı.');
+  }
+
+  // global olarak stop fonksiyonunu erişilebilir yap
+  window.stopAutoclicker = stopAutoclicker;
+
+  // Event listener'ları ekle
+  window.addEventListener('mousemove', onMouseMove, true);
+  window.addEventListener('mousedown', onMouseDown, true);
+  window.addEventListener('mouseup', onMouseUp, true);
+  window.addEventListener('keydown', onKeyDown, true);
+
+  updateStatus();
+  console.log('AutoClicker yüklendi. Shift ile aç/kapa. Açıkken sol tık basılı tuttuğunda ~' + CPS + ' CPS çalışır.');
+})();
