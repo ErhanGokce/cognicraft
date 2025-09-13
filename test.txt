@@ -1,152 +1,135 @@
-// --------------- AutoClicker (Shift toggle, hold-to-click ~16 CPS) ---------------
-// Yapıştırıp çalıştır: konsolda (DevTools) Enter'a bas.
-// Kapatmak / kaldırmak için: stopAutoclicker();
+Anladım 👍
+Yani tarayıcıya elle JS yapıştırmak yerine, masaüstünden çalıştırılabilen bir program istiyorsun:
 
-(function(){
-  if (window.__simpleShiftAutoClickerInstalled) {
-    console.warn('AutoClicker zaten yüklü. stopAutoclicker() ile kaldırabilirsin.');
-    return;
-  }
-  window.__simpleShiftAutoClickerInstalled = true;
+Python ile yazılmış olacak.
 
-  // --- AYARLAR ---
-  const CPS = 16; // hedef clicks per second
-  const intervalMs = Math.round(1000 / CPS); // ~62 ms for 16 CPS
-  const restrictToHost = location.host; // istersen burayı değiştir: örn "example.com"
-  // ----------------------------------------------------------------
+Bir aç/kapat butonlu arayüzü olacak.
 
-  let enabled = false;
-  let mouseDown = false;
-  let clickIntervalId = null;
-  let lastMouseX = 0;
-  let lastMouseY = 0;
+Açıkken, sol tık basılı tutulduğunda ~16 CPS (yani saniyede 16 tık) gönderecek.
 
-  // Basit durum göstergesi
-  const statusEl = document.createElement('div');
-  Object.assign(statusEl.style, {
-    position: 'fixed',
-    right: '12px',
-    bottom: '12px',
-    padding: '8px 10px',
-    background: 'rgba(0,0,0,0.65)',
-    color: 'white',
-    fontFamily: 'Arial, sans-serif',
-    fontSize: '13px',
-    borderRadius: '6px',
-    zIndex: 2147483647,
-    pointerEvents: 'none',
-    transition: 'opacity 0.12s',
-  });
-  statusEl.textContent = 'AutoClicker: OFF';
-  document.documentElement.appendChild(statusEl);
+Masaüstüne bir kısayol ikonu koyabileceksin (çift tıklayınca program açılacak).
 
-  function updateStatus() {
-    statusEl.textContent = `AutoClicker: ${enabled ? 'ON' : 'OFF'}${mouseDown ? ' (mouse down)' : ''}`;
-    statusEl.style.opacity = enabled ? '1' : '0.55';
-  }
 
-  // Domain kontrolü (sadece o sitede çalışsın)
-  if (location.host !== restrictToHost) {
-    console.warn('AutoClicker: Bu kod şu an bulunduğun host için yapılandırıldı:', restrictToHost);
-    console.warn('Mevcut host:', location.host, '- çalıştırılmıyor.');
-    // Yine de yükleme yapmıyoruz.
-    document.documentElement.removeChild(statusEl);
-    window.__simpleShiftAutoClickerInstalled = false;
-    return;
-  }
+Bunu yapmak için şu bileşenler uygundur:
 
-  // Fare koordinatlarını güncelle
-  function onMouseMove(e) {
-    lastMouseX = e.clientX;
-    lastMouseY = e.clientY;
-  }
+tkinter → arayüz için (buton, pencere).
 
-  // Mousedown/mouseup (sadece sol tuş)
-  function onMouseDown(e) {
-    if (e.button !== 0) return;
-    mouseDown = true;
-    if (enabled) startClicking();
-    updateStatus();
-  }
-  function onMouseUp(e) {
-    if (e.button !== 0) return;
-    mouseDown = false;
-    stopClicking();
-    updateStatus();
-  }
+pynput veya pyautogui → fare tıklaması simülasyonu.
 
-  // Shift ile toggle (key repeat'i engelle)
-  function onKeyDown(e) {
-    if (e.key === 'Shift' && !e.repeat) {
-      enabled = !enabled;
-      if (!enabled) stopClicking();
-      else if (mouseDown) startClicking();
-      updateStatus();
-      // görsel kısa bir flash
-      statusEl.style.transform = 'scale(1.05)';
-      setTimeout(()=> statusEl.style.transform = '', 100);
-    }
-  }
+pyinstaller → programı .exe haline getirip masaüstüne ikon koymak için.
 
-  // Tıklamayı başlat / durdur
-  function startClicking() {
-    if (clickIntervalId) return;
-    clickIntervalId = setInterval(()=> {
-      // element altında tıklama yap
-      const el = document.elementFromPoint(lastMouseX, lastMouseY);
-      if (!el) return;
-      // pointerdown, pointerup, click sırası
-      try {
-        const rect = el.getBoundingClientRect();
-        const clientX = Math.max(rect.left + 1, Math.min(lastMouseX, rect.right - 1));
-        const clientY = Math.max(rect.top + 1, Math.min(lastMouseY, rect.bottom - 1));
-        ['pointerdown','mousedown','pointerup','mouseup','click'].forEach(type => {
-          const ev = new MouseEvent(type, {
-            bubbles: true,
-            cancelable: true,
-            view: window,
-            clientX,
-            clientY,
-            button: 0,
-          });
-          el.dispatchEvent(ev);
-        });
-      } catch (err) {
-        // sende hata olursa sessizce atla
-        // console.error('click error', err);
-      }
-    }, intervalMs);
-  }
 
-  function stopClicking() {
-    if (!clickIntervalId) return;
-    clearInterval(clickIntervalId);
-    clickIntervalId = null;
-  }
 
-  // Temizleme / kaldırma fonksiyonu
-  function stopAutoclicker() {
-    stopClicking();
-    window.removeEventListener('mousemove', onMouseMove, true);
-    window.removeEventListener('mousedown', onMouseDown, true);
-    window.removeEventListener('mouseup', onMouseUp, true);
-    window.removeEventListener('keydown', onKeyDown, true);
-    if (statusEl && statusEl.parentNode) statusEl.parentNode.removeChild(statusEl);
-    window.__simpleShiftAutoClickerInstalled = false;
-    // expose removal function only once
-    try { delete window.stopAutoclicker; } catch(e){}
-    console.log('AutoClicker kaldırıldı.');
-  }
+---
 
-  // global olarak stop fonksiyonunu erişilebilir yap
-  window.stopAutoclicker = stopAutoclicker;
+✅ Örnek Python Kodu (Auto Clicker GUI)
 
-  // Event listener'ları ekle
-  window.addEventListener('mousemove', onMouseMove, true);
-  window.addEventListener('mousedown', onMouseDown, true);
-  window.addEventListener('mouseup', onMouseUp, true);
-  window.addEventListener('keydown', onKeyDown, true);
+import tkinter as tk
+from threading import Thread, Event
+from pynput import mouse
+import pyautogui
+import time
 
-  updateStatus();
-  console.log('AutoClicker yüklendi. Shift ile aç/kapa. Açıkken sol tık basılı tuttuğunda ~' + CPS + ' CPS çalışır.');
-})();
+CPS = 16  # Clicks per second
+INTERVAL = 1 / CPS
+
+running = False
+stop_event = Event()
+mouse_down = False
+
+def click_loop():
+    global running
+    while not stop_event.is_set():
+        if running and mouse_down:
+            pyautogui.click()
+            time.sleep(INTERVAL)
+        else:
+            time.sleep(0.01)
+
+def on_click(x, y, button, pressed):
+    global mouse_down
+    if button.name == "left":
+        mouse_down = pressed
+
+def toggle():
+    global running
+    running = not running
+    status_label.config(text=f"Status: {'ON' if running else 'OFF'}")
+
+# GUI
+root = tk.Tk()
+root.title("Auto Clicker")
+root.geometry("250x100")
+
+toggle_button = tk.Button(root, text="Aç/Kapat", command=toggle, width=15)
+toggle_button.pack(pady=10)
+
+status_label = tk.Label(root, text="Status: OFF")
+status_label.pack()
+
+# Mouse dinleyici
+listener = mouse.Listener(on_click=on_click)
+listener.start()
+
+# Click thread
+thread = Thread(target=click_loop, daemon=True)
+thread.start()
+
+def on_close():
+    stop_event.set()
+    listener.stop()
+    root.destroy()
+
+root.protocol("WM_DELETE_WINDOW", on_close)
+root.mainloop()
+
+
+---
+
+🚀 Kullanım Adımları
+
+1. Yukarıdaki kodu autoclicker.py olarak kaydet.
+
+
+2. Python’da gerekli paketleri yükle:
+
+pip install pyautogui pynput
+
+
+3. Çalıştır:
+
+python autoclicker.py
+
+
+4. Küçük bir pencere açılır: “Aç/Kapat” düğmesi.
+
+Açık → sol tık basılı tutunca saniyede ~16 kez tıklar.
+
+Kapalı → hiçbir şey yapmaz.
+
+
+
+
+
+---
+
+🖥️ Masaüstü İkona Çevirme
+
+Programı .exe yapmak için:
+
+pip install pyinstaller
+pyinstaller --onefile --noconsole --icon=ikon.ico autoclicker.py
+
+dist/ klasöründe autoclicker.exe çıkar.
+
+Masaüstüne kısayolunu atıp çift tıklayarak çalıştırabilirsin.
+
+İstediğin .ico dosyasını ikon olarak kullanabilirsin.
+
+
+
+---
+
+İstersen ben sana bunu hazır .exe dosyası üretmen için ayarlayabilirim (tek tıkla çalışacak).
+👉 İstiyor musun, sana adım adım .exe yapımını ve ikon eklemeyi göstereyim mi?
+
