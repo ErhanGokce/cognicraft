@@ -1,44 +1,20 @@
-Anladım 👍
-Yani tarayıcıya elle JS yapıştırmak yerine, masaüstünden çalıştırılabilen bir program istiyorsun:
-
-Python ile yazılmış olacak.
-
-Bir aç/kapat butonlu arayüzü olacak.
-
-Açıkken, sol tık basılı tutulduğunda ~16 CPS (yani saniyede 16 tık) gönderecek.
-
-Masaüstüne bir kısayol ikonu koyabileceksin (çift tıklayınca program açılacak).
-
-
-Bunu yapmak için şu bileşenler uygundur:
-
-tkinter → arayüz için (buton, pencere).
-
-pynput veya pyautogui → fare tıklaması simülasyonu.
-
-pyinstaller → programı .exe haline getirip masaüstüne ikon koymak için.
-
-
-
----
-
-✅ Örnek Python Kodu (Auto Clicker GUI)
-
 import tkinter as tk
 from threading import Thread, Event
 from pynput import mouse
 import pyautogui
 import time
 
-CPS = 16  # Clicks per second
+# --- Ayarlar ---
+CPS = 16
 INTERVAL = 1 / CPS
+# ---------------
 
-running = False
-stop_event = Event()
-mouse_down = False
+running = False       # Aç/Kapa durumu
+mouse_down = False    # Sol tık basılı mı?
+stop_event = Event()  # Threadi kapatmak için
 
 def click_loop():
-    global running
+    """Arka planda sürekli çalışır, sol tık basılı ve makro açıksa tıklar"""
     while not stop_event.is_set():
         if running and mouse_down:
             pyautogui.click()
@@ -47,31 +23,39 @@ def click_loop():
             time.sleep(0.01)
 
 def on_click(x, y, button, pressed):
+    """Fare olaylarını yakalar (sol tık basılı mı?)"""
     global mouse_down
-    if button.name == "left":
-        mouse_down = pressed
+    try:
+        if button.name == "left":
+            mouse_down = pressed
+    except AttributeError:
+        # Bazı sistemlerde button == Button.left olarak geliyor
+        from pynput.mouse import Button
+        if button == Button.left:
+            mouse_down = pressed
 
 def toggle():
+    """Makroyu aç/kapat"""
     global running
     running = not running
-    status_label.config(text=f"Status: {'ON' if running else 'OFF'}")
+    status_label.config(text=f"Durum: {'AÇIK' if running else 'KAPALI'}")
 
-# GUI
+# --- GUI ---
 root = tk.Tk()
-root.title("Auto Clicker")
+root.title("AutoClicker 16 CPS")
 root.geometry("250x100")
 
-toggle_button = tk.Button(root, text="Aç/Kapat", command=toggle, width=15)
+toggle_button = tk.Button(root, text="Aç / Kapat", command=toggle, width=15)
 toggle_button.pack(pady=10)
 
-status_label = tk.Label(root, text="Status: OFF")
+status_label = tk.Label(root, text="Durum: KAPALI")
 status_label.pack()
 
-# Mouse dinleyici
+# --- Mouse listener ---
 listener = mouse.Listener(on_click=on_click)
 listener.start()
 
-# Click thread
+# --- Click thread ---
 thread = Thread(target=click_loop, daemon=True)
 thread.start()
 
@@ -82,54 +66,3 @@ def on_close():
 
 root.protocol("WM_DELETE_WINDOW", on_close)
 root.mainloop()
-
-
----
-
-🚀 Kullanım Adımları
-
-1. Yukarıdaki kodu autoclicker.py olarak kaydet.
-
-
-2. Python’da gerekli paketleri yükle:
-
-pip install pyautogui pynput
-
-
-3. Çalıştır:
-
-python autoclicker.py
-
-
-4. Küçük bir pencere açılır: “Aç/Kapat” düğmesi.
-
-Açık → sol tık basılı tutunca saniyede ~16 kez tıklar.
-
-Kapalı → hiçbir şey yapmaz.
-
-
-
-
-
----
-
-🖥️ Masaüstü İkona Çevirme
-
-Programı .exe yapmak için:
-
-pip install pyinstaller
-pyinstaller --onefile --noconsole --icon=ikon.ico autoclicker.py
-
-dist/ klasöründe autoclicker.exe çıkar.
-
-Masaüstüne kısayolunu atıp çift tıklayarak çalıştırabilirsin.
-
-İstediğin .ico dosyasını ikon olarak kullanabilirsin.
-
-
-
----
-
-İstersen ben sana bunu hazır .exe dosyası üretmen için ayarlayabilirim (tek tıkla çalışacak).
-👉 İstiyor musun, sana adım adım .exe yapımını ve ikon eklemeyi göstereyim mi?
-
